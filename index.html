@@ -1885,7 +1885,15 @@ const documentsComplete = areDocumentsComplete(updatedPacket);
     function renderArchive() {
       const archivedPackets = [...packets.values()]
   .filter((packet) => packet.status === "archived")
-  .sort((a, b) => String(getFlightData(b).flightDateRaw || "").localeCompare(String(getFlightData(a).flightDateRaw || "")));
+  .sort((a, b) => {
+    const aFlight = getFlightData(a);
+    const bFlight = getFlightData(b);
+
+    const aTime = new Date(`${aFlight.flightDateRaw || "1900-01-01"}T${aFlight.scheduledDeparture || "00:00"}:00`).getTime();
+    const bTime = new Date(`${bFlight.flightDateRaw || "1900-01-01"}T${bFlight.scheduledDeparture || "00:00"}:00`).getTime();
+
+    return bTime - aTime;
+  });
 
       archiveScreen.innerHTML = `
         <div class="topbar">
