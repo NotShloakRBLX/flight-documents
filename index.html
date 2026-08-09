@@ -1,1 +1,1920 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Flight Documents</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;650;750;800;900;950&display=swap" rel="stylesheet">
 
+  <style>
+    :root {
+      --bg: #060b16;
+      --panel: #111827;
+      --panel-strong: #192232;
+      --line: rgba(255, 255, 255, 0.13);
+      --muted: rgba(255, 255, 255, 0.56);
+      --muted-strong: rgba(255, 255, 255, 0.72);
+      --text: #ffffff;
+      --blue: #39a8ff;
+      --green: #22d87a;
+      --red: #ff4b55;
+      --gold: #ffd66b;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      min-height: 100%;
+      background: var(--bg);
+    }
+
+    body {
+      margin: 0;
+      min-height: 100svh;
+      background:
+        radial-gradient(circle at top left, rgba(43, 88, 220, 0.24), transparent 34%),
+        radial-gradient(circle at top right, rgba(0, 208, 170, 0.12), transparent 30%),
+        linear-gradient(180deg, #070b16 0%, #06111b 100%);
+      color: var(--text);
+      font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      overflow-x: hidden;
+    }
+
+    button,
+    input {
+      font: inherit;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    button {
+      cursor: pointer;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .app {
+      width: min(100%, 720px);
+      min-height: 100svh;
+      margin: 0 auto;
+      padding: calc(20px + env(safe-area-inset-top)) 18px calc(34px + env(safe-area-inset-bottom));
+    }
+
+    .screen {
+      animation: screenIn 0.36s cubic-bezier(.2,.8,.2,1) both;
+    }
+
+    .screen.exiting {
+      animation: screenOut 0.22s ease both;
+    }
+
+    @keyframes screenIn {
+      from {
+        opacity: 0;
+        transform: translateY(16px) scale(0.985);
+        filter: blur(3px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+        filter: blur(0);
+      }
+    }
+
+    @keyframes screenOut {
+      from {
+        opacity: 1;
+        transform: translateY(0);
+      }
+
+      to {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+    }
+
+    @keyframes modalIn {
+      from {
+        opacity: 0;
+        transform: translateY(18px) scale(0.94);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      margin-bottom: 18px;
+    }
+
+    .page-title {
+      margin: 0;
+      font-size: clamp(38px, 10vw, 58px);
+      line-height: 0.95;
+      font-weight: 950;
+      letter-spacing: -0.055em;
+    }
+
+    .icon-button {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      border: 1px solid var(--line);
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.10), rgba(255,255,255,0.04)),
+        rgba(19, 28, 44, 0.72);
+      color: white;
+      display: grid;
+      place-items: center;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.09), 0 14px 36px rgba(0,0,0,0.25);
+      transition: transform 0.16s ease, border-color 0.18s ease, background 0.18s ease;
+    }
+
+    .icon-button:active {
+      transform: scale(0.94);
+    }
+
+    .icon-button svg {
+      width: 24px;
+      height: 24px;
+      stroke: currentColor;
+      stroke-width: 2.4;
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .title-line {
+      height: 1px;
+      background: linear-gradient(90deg, rgba(255,255,255,0.62), rgba(57,168,255,0.34), transparent);
+      margin-bottom: 22px;
+    }
+
+    .list {
+      display: grid;
+      gap: 4px;
+    }
+
+    .flight-list-card {
+      width: 100%;
+      border: 0;
+      border-bottom: 1px solid rgba(255,255,255,0.10);
+      background: transparent;
+      color: white;
+      padding: 18px 2px 22px;
+      display: grid;
+      grid-template-columns: 82px 1fr auto;
+      gap: 18px;
+      align-items: center;
+      text-align: left;
+      transition: transform 0.17s ease, opacity 0.17s ease;
+    }
+
+    .flight-list-card:active {
+      transform: scale(0.985);
+      opacity: 0.78;
+    }
+
+    .airline-logo {
+      width: 72px;
+      height: 72px;
+      object-fit: contain;
+    }
+
+    .flight-card-meta {
+      color: rgba(255,255,255,0.42);
+      font-size: clamp(19px, 5.5vw, 30px);
+      font-weight: 950;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+
+    .flight-card-title {
+      font-size: clamp(25px, 7vw, 42px);
+      line-height: 1;
+      font-weight: 950;
+      letter-spacing: -0.055em;
+      margin-bottom: 18px;
+    }
+
+    .flight-card-date {
+      color: rgba(255,255,255,0.56);
+      font-size: clamp(18px, 5vw, 29px);
+      font-weight: 900;
+      letter-spacing: 0.04em;
+    }
+
+    .card-chevron {
+      color: rgba(255,255,255,0.46);
+      font-size: 36px;
+      font-weight: 900;
+      padding-right: 4px;
+    }
+
+    .empty-card {
+      border: 1px solid var(--line);
+      border-radius: 26px;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.035)),
+        var(--panel);
+      padding: 28px 22px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 16px;
+      font-weight: 800;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 24px 70px rgba(0,0,0,0.28);
+    }
+
+    .detail-header {
+      margin: -2px -18px 0;
+      padding: calc(18px + env(safe-area-inset-top)) 24px 22px;
+      background: rgba(18, 19, 28, 0.88);
+      display: grid;
+      grid-template-columns: 74px 1fr 64px;
+      gap: 18px;
+      align-items: center;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .detail-header .airline-logo {
+      width: 58px;
+      height: 58px;
+    }
+
+    .detail-meta {
+      color: rgba(255,255,255,0.52);
+      font-size: 20px;
+      font-weight: 950;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+
+    .detail-route-title {
+      font-size: clamp(26px, 7vw, 38px);
+      font-weight: 950;
+      line-height: 1;
+      letter-spacing: -0.055em;
+    }
+
+    .close-button {
+      width: 58px;
+      height: 58px;
+      border-radius: 50%;
+      border: 1px solid rgba(255,255,255,0.12);
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.13), rgba(255,255,255,0.05)),
+        rgba(255,255,255,0.08);
+      color: white;
+      font-size: 34px;
+      line-height: 1;
+      display: grid;
+      place-items: center;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.1), 0 18px 38px rgba(0,0,0,0.28);
+    }
+
+    .status-card {
+      margin: 0 -18px 22px;
+      padding: 24px;
+      background: rgba(47, 45, 50, 0.92);
+      border-bottom: 1px solid rgba(255,255,255,0.10);
+      color: white;
+      font-size: clamp(24px, 7vw, 34px);
+      font-weight: 950;
+      letter-spacing: -0.045em;
+    }
+
+    .document-actions {
+      display: grid;
+      gap: 16px;
+      padding-top: 6px;
+    }
+
+    .document-button {
+      position: relative;
+      width: 100%;
+      min-height: 92px;
+      border-radius: 24px;
+      border: 1.5px solid rgba(57, 168, 255, 0.72);
+      background:
+        radial-gradient(circle at top right, rgba(57,168,255,0.13), transparent 34%),
+        linear-gradient(180deg, rgba(255,255,255,0.075), rgba(255,255,255,0.035)),
+        var(--panel);
+      color: white;
+      padding: 18px 20px;
+      text-align: left;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 18px 46px rgba(0,0,0,0.24);
+      transition: transform 0.17s ease, border-color 0.2s ease, opacity 0.2s ease;
+    }
+
+    .document-button:active {
+      transform: scale(0.982);
+    }
+
+    .document-name {
+      font-size: 24px;
+      font-weight: 950;
+      letter-spacing: -0.04em;
+      margin-bottom: 6px;
+    }
+
+    .document-state {
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 850;
+    }
+
+    .document-button.signed {
+      border-color: rgba(34, 216, 122, 0.72);
+      opacity: 0.58;
+      cursor: not-allowed;
+      filter: grayscale(0.35);
+    }
+
+    .signed-check {
+      position: absolute;
+      top: -12px;
+      right: 18px;
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      background: var(--green);
+      color: #04140b;
+      display: none;
+      place-items: center;
+      font-size: 21px;
+      font-weight: 950;
+      box-shadow: 0 12px 26px rgba(34, 216, 122, 0.24);
+    }
+
+    .document-button.signed .signed-check {
+      display: grid;
+    }
+
+    .doc-top {
+      display: grid;
+      grid-template-columns: 1fr 54px;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .doc-title {
+      margin: 0;
+      color: white;
+      font-size: clamp(34px, 9vw, 50px);
+      line-height: 0.98;
+      font-weight: 950;
+      letter-spacing: -0.06em;
+    }
+
+    .doc-underline {
+      height: 1px;
+      background: linear-gradient(90deg, rgba(255,255,255,0.65), rgba(57,168,255,0.28), transparent);
+      margin: 0 0 24px;
+    }
+
+    .cbp-mark {
+      display: flex;
+      justify-content: center;
+      margin: 14px 0 24px;
+    }
+
+    .cbp-mark img {
+      width: 82px;
+      height: 82px;
+      object-fit: contain;
+      filter: drop-shadow(0 14px 26px rgba(0,0,0,0.22));
+    }
+
+    .center-stage {
+      min-height: 54svh;
+      display: grid;
+      align-content: center;
+      gap: 18px;
+    }
+
+    .filing-title {
+      text-align: center;
+      color: white;
+      font-size: 24px;
+      font-weight: 950;
+      letter-spacing: -0.04em;
+    }
+
+    .method-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    .method-button,
+    .gray-button,
+    .green-button,
+    .red-button {
+      min-height: 58px;
+      border-radius: 999px;
+      border: 0;
+      font-size: 18px;
+      font-weight: 950;
+      transition: transform 0.16s ease, opacity 0.16s ease, border-color 0.18s ease;
+    }
+
+    .method-button {
+      border: 1px solid var(--line);
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.09), rgba(255,255,255,0.04)),
+        var(--panel);
+      color: white;
+    }
+
+    .method-button.selected {
+      border-color: rgba(57,168,255,0.86);
+      box-shadow: 0 0 0 4px rgba(57,168,255,0.14);
+    }
+
+    .green-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      width: 100%;
+      background: linear-gradient(180deg, #2ce98c, #12b967);
+      color: #04140b;
+      box-shadow: 0 16px 34px rgba(18, 185, 103, 0.25);
+    }
+
+    .green-button svg {
+      width: 20px;
+      height: 20px;
+      stroke: currentColor;
+      stroke-width: 2.5;
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .gray-button {
+      background: rgba(255,255,255,0.13);
+      color: white;
+      border: 1px solid rgba(255,255,255,0.12);
+    }
+
+    .red-button {
+      width: min(100%, 260px);
+      justify-self: center;
+      background: rgba(255, 75, 85, 0.14);
+      color: #ff6f78;
+      border: 1px solid rgba(255, 75, 85, 0.28);
+    }
+
+    .green-button:active,
+    .gray-button:active,
+    .red-button:active,
+    .method-button:active {
+      transform: scale(0.975);
+    }
+
+    .green-button:disabled {
+      opacity: 0.42;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
+    .question-card,
+    .summary-box {
+      border: 1px solid var(--line);
+      border-radius: 26px;
+      background:
+        radial-gradient(circle at top right, rgba(57,168,255,0.10), transparent 36%),
+        linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.035)),
+        var(--panel);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 24px 70px rgba(0,0,0,0.28);
+      padding: 22px;
+    }
+
+    .question-progress {
+      color: var(--blue);
+      font-size: 13px;
+      font-weight: 950;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+
+    .question-title {
+      font-size: clamp(28px, 8vw, 42px);
+      line-height: 1.02;
+      font-weight: 950;
+      letter-spacing: -0.055em;
+      margin-bottom: 16px;
+    }
+
+    .question-helper {
+      color: var(--muted);
+      font-size: 15px;
+      font-weight: 750;
+      line-height: 1.4;
+      margin-bottom: 18px;
+    }
+
+    .answer-input {
+      width: 100%;
+      min-height: 58px;
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 18px;
+      background: rgba(6, 11, 22, 0.62);
+      color: white;
+      padding: 0 16px;
+      font-size: 19px;
+      font-weight: 850;
+      outline: none;
+      transition: border-color 0.18s ease, box-shadow 0.18s ease;
+    }
+
+    .answer-input:focus {
+      border-color: rgba(57,168,255,0.82);
+      box-shadow: 0 0 0 4px rgba(57,168,255,0.12);
+    }
+
+    .form-nav {
+      display: grid;
+      gap: 12px;
+      margin-top: 20px;
+    }
+
+    .form-nav-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      transition: transform 0.28s cubic-bezier(.2,.8,.2,1);
+    }
+
+    .form-nav-row.first {
+      grid-template-columns: minmax(190px, 320px);
+      justify-content: center;
+    }
+
+    .signature-title {
+      text-align: center;
+      color: white;
+      font-size: 25px;
+      font-weight: 950;
+      letter-spacing: -0.04em;
+      margin: 8px 0 18px;
+    }
+
+    .signature-box {
+      width: 100%;
+      aspect-ratio: 2.35 / 1;
+      border-radius: 24px;
+      border: 1px solid rgba(255,255,255,0.16);
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.11), rgba(255,255,255,0.055)),
+        #2b313c;
+      overflow: hidden;
+      touch-action: none;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.12), 0 18px 46px rgba(0,0,0,0.24);
+    }
+
+    .signature-box canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .clear-signature {
+      width: fit-content;
+      justify-self: end;
+      margin-top: 10px;
+      border: 0;
+      background: transparent;
+      color: var(--blue);
+      font-size: 14px;
+      font-weight: 900;
+    }
+
+    .success-title {
+      text-align: center;
+      font-size: clamp(28px, 8vw, 42px);
+      line-height: 1;
+      font-weight: 950;
+      letter-spacing: -0.055em;
+      margin: 8px 0 22px;
+    }
+
+    .summary-box {
+      display: grid;
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+
+    .summary-row {
+      border-bottom: 1px solid rgba(255,255,255,0.10);
+      padding-bottom: 13px;
+    }
+
+    .summary-row:last-child {
+      border-bottom: 0;
+      padding-bottom: 0;
+    }
+
+    .summary-question {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 950;
+      letter-spacing: 0.11em;
+      text-transform: uppercase;
+      margin-bottom: 5px;
+    }
+
+    .summary-answer {
+      color: white;
+      font-size: 20px;
+      font-weight: 900;
+      overflow-wrap: anywhere;
+    }
+
+    .signature-image {
+      width: 100%;
+      min-height: 130px;
+      border-radius: 18px;
+      background: #2b313c;
+      object-fit: contain;
+      border: 1px solid rgba(255,255,255,0.12);
+    }
+
+    .photo-preview {
+      width: 100%;
+      border-radius: 22px;
+      border: 1px solid rgba(255,255,255,0.14);
+      display: block;
+      box-shadow: 0 18px 46px rgba(0,0,0,0.25);
+    }
+
+    .modal-cover {
+      position: fixed;
+      inset: 0;
+      z-index: 50;
+      background: rgba(0,0,0,0.72);
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      backdrop-filter: blur(14px);
+    }
+
+    .modal {
+      width: min(100%, 370px);
+      border: 1px solid var(--line);
+      border-radius: 28px;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.09), rgba(255,255,255,0.04)),
+        var(--panel-strong);
+      padding: 30px;
+      text-align: center;
+      box-shadow: 0 30px 90px rgba(0,0,0,0.48);
+      animation: modalIn 0.32s cubic-bezier(.2,.8,.2,1) both;
+    }
+
+    .spinner {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      border: 4px solid rgba(255,255,255,0.14);
+      border-top-color: var(--green);
+      margin: 0 auto 18px;
+      animation: spin 1s linear infinite;
+    }
+
+    .modal-title {
+      color: white;
+      font-size: 25px;
+      font-weight: 950;
+      letter-spacing: -0.04em;
+      margin-bottom: 6px;
+    }
+
+    .modal-text {
+      color: var(--muted);
+      font-size: 15px;
+      font-weight: 750;
+      line-height: 1.4;
+    }
+
+    .modal-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 22px;
+    }
+
+    .file-input {
+      display: none;
+    }
+
+    @media (max-width: 520px) {
+      .app {
+        padding: calc(16px + env(safe-area-inset-top)) 14px calc(28px + env(safe-area-inset-bottom));
+      }
+
+      .flight-list-card {
+        grid-template-columns: 72px 1fr auto;
+        gap: 14px;
+      }
+
+      .airline-logo {
+        width: 62px;
+        height: 62px;
+      }
+
+      .detail-header {
+        margin: -2px -14px 0;
+        padding: calc(16px + env(safe-area-inset-top)) 20px 20px;
+        grid-template-columns: 62px 1fr 54px;
+      }
+
+      .detail-header .airline-logo {
+        width: 50px;
+        height: 50px;
+      }
+
+      .detail-meta {
+        font-size: 16px;
+      }
+
+      .close-button {
+        width: 50px;
+        height: 50px;
+        font-size: 30px;
+      }
+
+      .status-card {
+        margin-left: -14px;
+        margin-right: -14px;
+        padding: 22px 20px;
+      }
+
+      .method-row,
+      .form-nav-row {
+        gap: 10px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="app">
+    <section class="screen" id="homeScreen">
+      <div class="topbar">
+        <h1 class="page-title">Documents</h1>
+        <button class="icon-button" id="archiveButton" type="button" aria-label="Signed documents archive">
+          <svg viewBox="0 0 24 24">
+            <path d="M6 3h9l3 3v15H6z"></path>
+            <path d="M15 3v4h4"></path>
+            <path d="M9 12h6"></path>
+            <path d="M9 16h6"></path>
+          </svg>
+        </button>
+      </div>
+      <div class="title-line"></div>
+      <div class="list" id="homeList"></div>
+    </section>
+
+    <section class="screen hidden" id="packetScreen"></section>
+    <section class="screen hidden" id="documentScreen"></section>
+    <section class="screen hidden" id="archiveScreen"></section>
+    <section class="screen hidden" id="archivePacketScreen"></section>
+    <section class="screen hidden" id="archiveDocumentScreen"></section>
+  </main>
+
+  <div class="modal-cover hidden" id="loadingModal">
+    <div class="modal">
+      <div class="spinner"></div>
+      <div class="modal-title" id="loadingTitle">Submitting documents...</div>
+      <div class="modal-text" id="loadingText">Securing your signed form.</div>
+    </div>
+  </div>
+
+  <div class="modal-cover hidden" id="exitModal">
+    <div class="modal">
+      <div class="modal-title">Exit form?</div>
+      <div class="modal-text">Your answers for this form will not be submitted.</div>
+      <div class="modal-actions">
+        <button class="gray-button" id="cancelExitButton" type="button">Cancel</button>
+        <button class="red-button" id="confirmExitButton" type="button">Exit</button>
+      </div>
+    </div>
+  </div>
+
+  <input class="file-input" id="photoInput" type="file" accept="image/*" capture="environment" />
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+
+    import {
+      getAuth,
+      GoogleAuthProvider,
+      browserLocalPersistence,
+      setPersistence,
+      signInWithPopup,
+      onAuthStateChanged
+    } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+
+    import {
+      getFirestore,
+      collection,
+      doc,
+      getDoc,
+      onSnapshot,
+      setDoc,
+      updateDoc,
+      serverTimestamp
+    } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+
+    import {
+      getStorage,
+      ref,
+      uploadBytes,
+      getDownloadURL
+    } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-storage.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAehW0Ab5c0bpb824JyPBa43YBvyR7zwig",
+      authDomain: "msfs-flight-tracker.firebaseapp.com",
+      projectId: "msfs-flight-tracker",
+      storageBucket: "msfs-flight-tracker.firebasestorage.app",
+      messagingSenderId: "477994284624",
+      appId: "1:477994284624:web:50bef41d84258420ea8355"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const storage = getStorage(app);
+    const auth = getAuth(app);
+    const authProvider = new GoogleAuthProvider();
+    const OWNER_UID = "VUyX2rFavOc2wL06uM3icLUTqyW2";
+
+    let ownerAuthStarted = false;
+
+    function showAuthGate(title = "Sign in required", subtitle = "Sign in to access your flight documents.") {
+      let gate = document.getElementById("authGate");
+
+      if (!gate) {
+        document.body.insertAdjacentHTML("beforeend", `
+          <section id="authGate" style="position:fixed;inset:0;z-index:999999;display:grid;place-items:center;background:radial-gradient(circle at top left,rgba(45,89,210,.25),transparent 34%),linear-gradient(180deg,#070b16,#06111b);color:white;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;padding:22px;">
+            <div style="width:min(100%,430px);border:1px solid rgba(255,255,255,.14);border-radius:28px;background:linear-gradient(180deg,rgba(255,255,255,.09),rgba(255,255,255,.04));box-shadow:0 28px 80px rgba(0,0,0,.45);padding:30px 24px;text-align:center;">
+              <div id="authGateTitle" style="font-size:30px;font-weight:950;letter-spacing:-.04em;margin-bottom:8px;">Sign in required</div>
+              <div id="authGateSubtitle" style="color:rgba(255,255,255,.68);font-size:15px;font-weight:750;line-height:1.4;margin-bottom:22px;">Sign in to access your flight documents.</div>
+              <button id="authSignInButton" type="button" style="width:100%;min-height:56px;border:0;border-radius:999px;background:linear-gradient(180deg,#2ce98c,#12b967);color:#04140b;font-size:18px;font-weight:950;cursor:pointer;">Sign in with Google</button>
+            </div>
+          </section>
+        `);
+      }
+
+      document.getElementById("authGateTitle").textContent = title;
+      document.getElementById("authGateSubtitle").textContent = subtitle;
+      document.getElementById("authGate").style.display = "grid";
+
+      document.getElementById("authSignInButton").onclick = async () => {
+        try {
+          await setPersistence(auth, browserLocalPersistence);
+          await signInWithPopup(auth, authProvider);
+        } catch (error) {
+          console.error("Sign in failed:", error);
+          alert("Sign in failed. Check the console for details.");
+        }
+      };
+    }
+
+    function hideAuthGate() {
+      const gate = document.getElementById("authGate");
+      if (gate) gate.style.display = "none";
+    }
+
+    function requireOwnerAuth(startApp) {
+      setPersistence(auth, browserLocalPersistence).finally(() => {
+        onAuthStateChanged(auth, (user) => {
+          if (!user) {
+            showAuthGate();
+            return;
+          }
+
+          console.log("Signed in UID:", user.uid);
+
+          if (OWNER_UID && user.uid !== OWNER_UID) {
+            showAuthGate("Access denied", "This account is not allowed to access this document system.");
+            return;
+          }
+
+          hideAuthGate();
+
+          if (ownerAuthStarted) return;
+          ownerAuthStarted = true;
+          startApp(user);
+        });
+      });
+    }
+
+    const homeScreen = document.getElementById("homeScreen");
+    const packetScreen = document.getElementById("packetScreen");
+    const documentScreen = document.getElementById("documentScreen");
+    const archiveScreen = document.getElementById("archiveScreen");
+    const archivePacketScreen = document.getElementById("archivePacketScreen");
+    const archiveDocumentScreen = document.getElementById("archiveDocumentScreen");
+    const homeList = document.getElementById("homeList");
+    const archiveButton = document.getElementById("archiveButton");
+    const loadingModal = document.getElementById("loadingModal");
+    const loadingTitle = document.getElementById("loadingTitle");
+    const loadingText = document.getElementById("loadingText");
+    const exitModal = document.getElementById("exitModal");
+    const cancelExitButton = document.getElementById("cancelExitButton");
+    const confirmExitButton = document.getElementById("confirmExitButton");
+    const photoInput = document.getElementById("photoInput");
+
+    const params = new URLSearchParams(window.location.search);
+    const launchFlightId = params.get("flightId") || "";
+    const returnUrl = params.get("returnUrl") || "";
+
+    const DOC_CONFIG = {
+      cbp7507: {
+        key: "cbp7507",
+        title: "CBP Form 7507",
+        shortTitle: "CBP 7507",
+        usesCBPLogo: true,
+        questions: [
+          "Owner or Operator",
+          "Marks of Nationality and Registration",
+          "Flight #",
+          "Date",
+          "Departure from",
+          "Arrival at",
+          "Departure embarking",
+          "Arrival embarking"
+        ]
+      },
+      loadsheet: {
+        key: "loadsheet",
+        title: "Loadsheet Form",
+        shortTitle: "Loadsheet",
+        usesCBPLogo: false,
+        questions: [
+          "Flight #",
+          "Aircraft Registration",
+          "Aircraft Type",
+          "Date",
+          "Departure Airport",
+          "Arrival Airport",
+          "Trip fuel",
+          "Contingency fuel",
+          "Reserve fuel",
+          "Block fuel",
+          "Estimated ZFW",
+          "Estimated TOW",
+          "Estimated LW",
+          "# of Passengers",
+          "Cruise Profile"
+        ]
+      },
+      eapis: {
+        key: "eapis",
+        title: "eAPIS Form",
+        shortTitle: "eAPIS",
+        usesCBPLogo: true,
+        questions: [
+          "Aircraft Tail Number",
+          "Departure airport",
+          "Departure city",
+          "Departure state",
+          "Date",
+          "Arrival country",
+          "Arrival airport",
+          "Arrival city",
+          "Date of arrival",
+          "Estimated time & location of crossing US Border/Coastline",
+          "First & Last name",
+          "# of passengers"
+        ]
+      }
+    };
+
+    let packets = new Map();
+    let flights = new Map();
+    let activePacket = null;
+    let activeFlight = null;
+    let activeDocKey = "";
+    let currentDocMode = "intro";
+    let currentQuestionIndex = 0;
+    let currentAnswers = [];
+    let currentMethod = "";
+    let signaturePad = null;
+    let signatureHasInk = false;
+    let pendingExitTarget = null;
+
+    function escapeHTML(value) {
+      return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function transitionTo(screen) {
+      [homeScreen, packetScreen, documentScreen, archiveScreen, archivePacketScreen, archiveDocumentScreen]
+        .forEach((item) => item.classList.add("hidden"));
+
+      screen.classList.remove("hidden");
+      screen.classList.remove("exiting");
+      screen.style.animation = "none";
+      void screen.offsetWidth;
+      screen.style.animation = "";
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function getAirlineLogoPath(code) {
+      const safeCode = String(code || "").trim().toLowerCase();
+      return safeCode ? `./${safeCode}.png` : "";
+    }
+
+    function getFlightData(packet) {
+      return flights.get(packet.flightId) || packet.flightSnapshot || {};
+    }
+
+    function getDateObject(flight) {
+      const raw = flight.flightDateRaw || "";
+      const date = raw ? new Date(`${raw}T00:00:00`) : null;
+      return date && !Number.isNaN(date.getTime()) ? date : null;
+    }
+
+    function formatListDate(flight) {
+      const date = getDateObject(flight);
+      if (!date) return flight.flightDate || "--";
+
+      return date.toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric"
+      });
+    }
+
+    function formatHeaderDate(flight) {
+      const date = getDateObject(flight);
+      if (!date) return flight.flightDate || "--";
+
+      return date.toLocaleDateString("en-US", {
+        weekday: "short",
+        month: "short",
+        day: "numeric"
+      }).toUpperCase();
+    }
+
+    function formatTime(timeValue) {
+      if (!timeValue) return "--";
+      const date = new Date(`2026-01-01T${timeValue}:00`);
+      if (Number.isNaN(date.getTime())) return timeValue;
+
+      return date.toLocaleTimeString([], {
+        hour: "numeric",
+        minute: "2-digit"
+      });
+    }
+
+    function getFlightNumberLabel(flight) {
+      return `${flight.airline || "AA"} ${flight.flightNumber || "0000"}`;
+    }
+
+    function getFlightMeta(flight) {
+      return `${getFlightNumberLabel(flight)}  ${flight.departureAirport || "DEP"} -> ${flight.arrivalAirport || "ARR"}`;
+    }
+
+    function getRouteTitle(flight) {
+      return `${flight.cityDeparture || flight.departureAirport || "Departure"} to ${flight.cityArrival || flight.arrivalAirport || "Arrival"}`;
+    }
+
+    function getRequiredDocumentKeys(packet, flight) {
+      if (Array.isArray(packet.requiredDocuments) && packet.requiredDocuments.length) {
+        return packet.requiredDocuments;
+      }
+
+      if (flight?.internationalUSDeparture === true || packet.internationalUSDeparture === true) {
+        return ["cbp7507", "loadsheet", "eapis"];
+      }
+
+      if (flight?.internationalUSArrival === true || packet.internationalUSArrival === true) {
+        return ["cbp7507", "loadsheet"];
+      }
+
+      return ["loadsheet"];
+    }
+
+    function getDocumentState(packet, key) {
+      return packet?.documents?.[key] || {
+        key,
+        title: DOC_CONFIG[key]?.title || key,
+        signed: false,
+        required: true,
+        method: "",
+        answers: [],
+        signatureDataUrl: "",
+        photoURL: "",
+        photoPath: "",
+        signedAt: null
+      };
+    }
+
+    function getRemainingDocuments(packet) {
+      const flight = getFlightData(packet);
+      return getRequiredDocumentKeys(packet, flight).filter((key) => getDocumentState(packet, key).signed !== true);
+    }
+
+    function areDocumentsComplete(packet) {
+      return getRemainingDocuments(packet).length === 0;
+    }
+
+    function getPrefillAnswer(question, flight) {
+      const label = question.toLowerCase();
+      const flightNumber = getFlightNumberLabel(flight);
+
+      if (label.includes("owner") || label.includes("operator")) return flight.airline || "AA";
+      if (label.includes("marks") || label.includes("registration") || label.includes("tail")) return flight.aircraftRegistration || "";
+      if (label === "flight #" || label.includes("flight #")) return flightNumber;
+      if (label === "date" || label.includes("date of arrival")) return formatListDate(flight);
+      if (label.includes("departure from") || label.includes("departure airport")) return flight.departureAirport || "";
+      if (label.includes("arrival at") || label.includes("arrival airport")) return flight.arrivalAirport || "";
+      if (label.includes("departure embarking")) return flight.departureAirport || "";
+      if (label.includes("arrival embarking")) return flight.arrivalAirport || "";
+      if (label.includes("aircraft type")) return flight.aircraftType || "";
+      if (label.includes("departure city")) return flight.cityDeparture || "";
+      if (label.includes("arrival city")) return flight.cityArrival || "";
+      if (label.includes("arrival country")) return flight.internationalUSDeparture ? "United States" : "";
+      if (label.includes("first & last name")) return "Shloak Patel";
+      if (label.includes("# of passengers")) return "1";
+      if (label.includes("crossing")) return `${formatTime(flight.scheduledDeparture)} near ${flight.departureAirport || "departure"}`;
+
+      return "";
+    }
+
+    function getQuestionHelper(question) {
+      if (question.includes("fuel")) return "Enter planned fuel quantity for this flight.";
+      if (question.includes("Estimated")) return "Enter the estimated aircraft weight for dispatch review.";
+      if (question.includes("Registration") || question.includes("Tail")) return "Use the aircraft tail number or registration used for this flight.";
+      if (question.includes("crossing")) return "Enter the estimated border or coastline crossing point and time.";
+      return "Review the prefilled value or enter the required filing information.";
+    }
+
+    function renderFlightListCard(packet, mode = "active") {
+      const flight = getFlightData(packet);
+      const signedCount = getRequiredDocumentKeys(packet, flight).filter((key) => getDocumentState(packet, key).signed === true).length;
+      const totalCount = getRequiredDocumentKeys(packet, flight).length;
+      const status = mode === "archive" ? `${signedCount}/${totalCount} signed` : `${getRemainingDocuments(packet).length} remaining`;
+
+      return `
+        <button class="flight-list-card" type="button" data-flight-id="${escapeHTML(packet.flightId)}">
+          <img class="airline-logo" src="${getAirlineLogoPath(flight.airline)}" alt="${escapeHTML(flight.airline || "Airline")} logo" onerror="this.style.display='none';" />
+          <div>
+            <div class="flight-card-meta">${escapeHTML(getFlightMeta(flight))}</div>
+            <div class="flight-card-title">${escapeHTML(getRouteTitle(flight))}</div>
+            <div class="flight-card-date">${escapeHTML(formatListDate(flight))} · ${escapeHTML(status)}</div>
+          </div>
+          <div class="card-chevron">›</div>
+        </button>
+      `;
+    }
+
+    function renderHome() {
+      const activePackets = [...packets.values()]
+        .filter((packet) => packet.status !== "archived" && packet.status !== "deleted")
+        .sort((a, b) => String(getFlightData(a).flightDateRaw || "").localeCompare(String(getFlightData(b).flightDateRaw || "")));
+
+      homeList.innerHTML = activePackets.length
+        ? activePackets.map((packet) => renderFlightListCard(packet)).join("")
+        : `<section class="empty-card">No active document packets.</section>`;
+
+      homeList.querySelectorAll("[data-flight-id]").forEach((button) => {
+        button.addEventListener("click", () => openPacket(button.dataset.flightId));
+      });
+    }
+
+    function renderDetailHeader(packet) {
+      const flight = getFlightData(packet);
+
+      return `
+        <section class="detail-header">
+          <img class="airline-logo" src="${getAirlineLogoPath(flight.airline)}" alt="${escapeHTML(flight.airline || "Airline")} logo" onerror="this.style.display='none';" />
+          <div>
+            <div class="detail-meta">${escapeHTML(getFlightNumberLabel(flight))} · ${escapeHTML(formatHeaderDate(flight))}</div>
+            <div class="detail-route-title">${escapeHTML(getRouteTitle(flight))}</div>
+          </div>
+          <button class="close-button" id="detailCloseButton" type="button">×</button>
+        </section>
+      `;
+    }
+
+    function getPacketStatusText(packet) {
+      const remaining = getRemainingDocuments(packet).length;
+      const total = getRequiredDocumentKeys(packet, getFlightData(packet)).length;
+
+      if (remaining === 0) return "Documents complete";
+      if (remaining === total) return `${total} document${total === 1 ? "" : "s"} required`;
+      return `${remaining} document${remaining === 1 ? "" : "s"} remaining`;
+    }
+
+    function renderPacketButtons(packet, archiveMode = false) {
+      const flight = getFlightData(packet);
+
+      return getRequiredDocumentKeys(packet, flight).map((key) => {
+        const config = DOC_CONFIG[key];
+        const state = getDocumentState(packet, key);
+        const signed = state.signed === true;
+        const subtitle = signed
+          ? state.method === "physical"
+            ? "Physical filing complete"
+            : "Signed and filed"
+          : "Ready to sign";
+
+        return `
+          <button
+            class="document-button ${signed ? "signed" : ""}"
+            type="button"
+            data-doc-key="${escapeHTML(key)}"
+            ${signed && !archiveMode ? "disabled" : ""}
+          >
+            <div class="signed-check">✓</div>
+            <div class="document-name">${escapeHTML(config.shortTitle)}</div>
+            <div class="document-state">${escapeHTML(subtitle)}</div>
+          </button>
+        `;
+      }).join("");
+    }
+
+    function openPacket(flightId) {
+      const packet = packets.get(flightId);
+      if (!packet) return;
+
+      activePacket = packet;
+      activeFlight = getFlightData(packet);
+
+      packetScreen.innerHTML = `
+        ${renderDetailHeader(packet)}
+        <section class="status-card">${escapeHTML(getPacketStatusText(packet))}</section>
+        <section class="document-actions">${renderPacketButtons(packet)}</section>
+      `;
+
+      document.getElementById("detailCloseButton").addEventListener("click", () => transitionTo(homeScreen));
+
+      packetScreen.querySelectorAll("[data-doc-key]").forEach((button) => {
+        button.addEventListener("click", () => {
+          const key = button.dataset.docKey;
+          if (getDocumentState(activePacket, key).signed === true) return;
+          openDocumentIntro(key);
+        });
+      });
+
+      transitionTo(packetScreen);
+    }
+
+    function lockIconSVG() {
+      return `
+        <svg viewBox="0 0 24 24">
+          <rect x="5" y="10" width="14" height="10" rx="2"></rect>
+          <path d="M8 10V7a4 4 0 0 1 8 0v3"></path>
+        </svg>
+      `;
+    }
+
+    function cameraIconSVG() {
+      return `
+        <svg viewBox="0 0 24 24">
+          <path d="M4 8h4l2-3h4l2 3h4v11H4z"></path>
+          <circle cx="12" cy="13.5" r="3.5"></circle>
+        </svg>
+      `;
+    }
+
+    function renderDocShell(content, showClose = true) {
+      const config = DOC_CONFIG[activeDocKey];
+
+      documentScreen.innerHTML = `
+        <div class="doc-top">
+          <h1 class="doc-title">${escapeHTML(config.title)}</h1>
+          ${showClose ? `<button class="icon-button" id="docCloseButton" type="button" aria-label="Close document">×</button>` : `<span></span>`}
+        </div>
+        <div class="doc-underline"></div>
+        ${config.usesCBPLogo ? `<div class="cbp-mark"><img src="./cbp.png" alt="CBP logo" onerror="this.style.display='none';" /></div>` : ""}
+        ${content}
+      `;
+
+      const closeButton = document.getElementById("docCloseButton");
+      if (closeButton) {
+        closeButton.addEventListener("click", () => openPacket(activePacket.flightId));
+      }
+    }
+
+    function openDocumentIntro(key) {
+      activeDocKey = key;
+      currentDocMode = "intro";
+      currentQuestionIndex = 0;
+      currentAnswers = DOC_CONFIG[key].questions.map((question) => getPrefillAnswer(question, activeFlight));
+      currentMethod = "";
+
+      if (key === "cbp7507") {
+        renderCBPMethodPage();
+      } else {
+        renderStartPage();
+      }
+
+      transitionTo(documentScreen);
+    }
+
+    function renderStartPage() {
+      renderDocShell(`
+        <section class="center-stage">
+          <button class="green-button" id="startFormButton" type="button">${lockIconSVG()} Start form</button>
+        </section>
+      `);
+
+      document.getElementById("startFormButton").addEventListener("click", () => renderQuestionPage(0));
+    }
+
+    function renderCBPMethodPage() {
+      renderDocShell(`
+        <section class="center-stage">
+          <div class="filing-title">Filing method</div>
+          <div class="method-row">
+            <button class="method-button" id="physicalButton" type="button">Physical</button>
+            <button class="method-button" id="digitalButton" type="button">Digital</button>
+          </div>
+          <div id="methodAction"></div>
+        </section>
+      `);
+
+      const physicalButton = document.getElementById("physicalButton");
+      const digitalButton = document.getElementById("digitalButton");
+      const methodAction = document.getElementById("methodAction");
+
+      function selectMethod(method) {
+        currentMethod = method;
+        physicalButton.classList.toggle("selected", method === "physical");
+        digitalButton.classList.toggle("selected", method === "digital");
+
+        methodAction.innerHTML = method === "physical"
+          ? `<button class="green-button" id="takePictureButton" type="button">${cameraIconSVG()} Take picture</button>`
+          : `<button class="green-button" id="startFormButton" type="button">${lockIconSVG()} Start form</button>`;
+
+        const startFormButton = document.getElementById("startFormButton");
+        const takePictureButton = document.getElementById("takePictureButton");
+
+        if (startFormButton) {
+          startFormButton.addEventListener("click", () => renderQuestionPage(0));
+        }
+
+        if (takePictureButton) {
+          takePictureButton.addEventListener("click", () => photoInput.click());
+        }
+      }
+
+      physicalButton.addEventListener("click", () => selectMethod("physical"));
+      digitalButton.addEventListener("click", () => selectMethod("digital"));
+    }
+
+    function renderQuestionPage(index) {
+      currentDocMode = "questions";
+      currentQuestionIndex = index;
+
+      const config = DOC_CONFIG[activeDocKey];
+      const question = config.questions[index];
+      const value = currentAnswers[index] || "";
+      const isFirst = index === 0;
+
+      renderDocShell(`
+        <section class="question-card">
+          <div class="question-progress">Question ${index + 1} of ${config.questions.length}</div>
+          <div class="question-title">${escapeHTML(question)}</div>
+          <div class="question-helper">${escapeHTML(getQuestionHelper(question))}</div>
+          <input class="answer-input" id="answerInput" type="text" value="${escapeHTML(value)}" autocomplete="off" />
+        </section>
+
+        <section class="form-nav">
+          <div class="form-nav-row ${isFirst ? "first" : ""}">
+            <button class="green-button" id="continueQuestionButton" type="button">Continue</button>
+            ${isFirst ? "" : `<button class="gray-button" id="backQuestionButton" type="button">Back</button>`}
+          </div>
+          <button class="red-button" id="exitFormButton" type="button">Exit form</button>
+        </section>
+      `, false);
+
+      const answerInput = document.getElementById("answerInput");
+      const continueButton = document.getElementById("continueQuestionButton");
+      const backButton = document.getElementById("backQuestionButton");
+
+      answerInput.focus({ preventScroll: true });
+
+      continueButton.addEventListener("click", () => {
+        currentAnswers[index] = answerInput.value.trim();
+
+        if (index + 1 >= config.questions.length) {
+          renderSignaturePage();
+          return;
+        }
+
+        renderQuestionPage(index + 1);
+      });
+
+      if (backButton) {
+        backButton.addEventListener("click", () => {
+          currentAnswers[index] = answerInput.value.trim();
+          renderQuestionPage(index - 1);
+        });
+      }
+
+      document.getElementById("exitFormButton").addEventListener("click", confirmExitForm);
+    }
+
+    function renderSignaturePage() {
+      currentDocMode = "signature";
+
+      renderDocShell(`
+        <div class="signature-title">Signature required</div>
+        <div class="signature-box">
+          <canvas id="signatureCanvas"></canvas>
+        </div>
+        <button class="clear-signature" id="clearSignatureButton" type="button">Clear signature</button>
+
+        <section class="form-nav">
+          <div class="form-nav-row">
+            <button class="green-button" id="submitFormButton" type="button" disabled>${lockIconSVG()} Submit form</button>
+            <button class="gray-button" id="signatureBackButton" type="button">Back</button>
+          </div>
+          <button class="red-button" id="exitFormButton" type="button">Exit form</button>
+        </section>
+      `, false);
+
+      setupSignaturePad();
+
+      document.getElementById("signatureBackButton").addEventListener("click", () => {
+        renderQuestionPage(DOC_CONFIG[activeDocKey].questions.length - 1);
+      });
+
+      document.getElementById("clearSignatureButton").addEventListener("click", clearSignature);
+      document.getElementById("exitFormButton").addEventListener("click", confirmExitForm);
+      document.getElementById("submitFormButton").addEventListener("click", submitDigitalDocument);
+    }
+
+    function setupSignaturePad() {
+      const canvas = document.getElementById("signatureCanvas");
+      const submitButton = document.getElementById("submitFormButton");
+      const rect = canvas.parentElement.getBoundingClientRect();
+      const scale = window.devicePixelRatio || 1;
+
+      canvas.width = Math.floor(rect.width * scale);
+      canvas.height = Math.floor(rect.height * scale);
+
+      const context = canvas.getContext("2d");
+      context.scale(scale, scale);
+      context.lineWidth = 4;
+      context.lineCap = "round";
+      context.lineJoin = "round";
+      context.strokeStyle = "#ffffff";
+
+      let drawing = false;
+
+      function point(event) {
+        const bounds = canvas.getBoundingClientRect();
+        const source = event.touches ? event.touches[0] : event;
+        return {
+          x: source.clientX - bounds.left,
+          y: source.clientY - bounds.top
+        };
+      }
+
+      function start(event) {
+        event.preventDefault();
+        drawing = true;
+        const p = point(event);
+        context.beginPath();
+        context.moveTo(p.x, p.y);
+      }
+
+      function move(event) {
+        if (!drawing) return;
+        event.preventDefault();
+        const p = point(event);
+        context.lineTo(p.x, p.y);
+        context.stroke();
+        signatureHasInk = true;
+        submitButton.disabled = false;
+      }
+
+      function end() {
+        drawing = false;
+      }
+
+      canvas.addEventListener("pointerdown", start);
+      canvas.addEventListener("pointermove", move);
+      canvas.addEventListener("pointerup", end);
+      canvas.addEventListener("pointerleave", end);
+
+      signaturePad = canvas;
+      signatureHasInk = false;
+    }
+
+    function clearSignature() {
+      if (!signaturePad) return;
+      const context = signaturePad.getContext("2d");
+      context.clearRect(0, 0, signaturePad.width, signaturePad.height);
+      signatureHasInk = false;
+      document.getElementById("submitFormButton").disabled = true;
+    }
+
+    function confirmExitForm() {
+      exitModal.classList.remove("hidden");
+      pendingExitTarget = () => openPacket(activePacket.flightId);
+    }
+
+    cancelExitButton.addEventListener("click", () => {
+      exitModal.classList.add("hidden");
+      pendingExitTarget = null;
+    });
+
+    confirmExitButton.addEventListener("click", () => {
+      exitModal.classList.add("hidden");
+
+      if (pendingExitTarget) {
+        pendingExitTarget();
+      }
+
+      pendingExitTarget = null;
+    });
+
+    function showLoading(title, text) {
+      loadingTitle.textContent = title;
+      loadingText.textContent = text;
+      loadingModal.classList.remove("hidden");
+    }
+
+    function hideLoading() {
+      loadingModal.classList.add("hidden");
+    }
+
+    function buildAnswerRecords() {
+      return DOC_CONFIG[activeDocKey].questions.map((question, index) => ({
+        question,
+        answer: currentAnswers[index] || ""
+      }));
+    }
+
+    async function submitDigitalDocument() {
+      if (!signatureHasInk || !signaturePad) return;
+
+      const signatureDataUrl = signaturePad.toDataURL("image/png");
+      const answers = buildAnswerRecords();
+
+      showLoading("Submitting documents...", "Securing your signed form.");
+
+      try {
+        await new Promise((resolve) => setTimeout(resolve, 5000));
+        await persistSignedDocument({
+          method: currentMethod || "digital",
+          answers,
+          signatureDataUrl
+        });
+
+        hideLoading();
+        renderDocumentConfirmation({
+          method: currentMethod || "digital",
+          answers,
+          signatureDataUrl
+        });
+      } catch (error) {
+        console.error("Error submitting document:", error);
+        hideLoading();
+        alert("Document could not be submitted. Check Firestore rules.");
+      }
+    }
+
+    photoInput.addEventListener("change", async () => {
+      const file = photoInput.files?.[0];
+      if (!file || !activePacket || activeDocKey !== "cbp7507") return;
+
+      showLoading("Submitting documents...", "Uploading physical CBP Form 7507.");
+
+      try {
+        await new Promise((resolve) => setTimeout(resolve, 5000));
+
+        const photoPath = `documentPhotos/${activePacket.flightId}/cbp7507-${Date.now()}.jpg`;
+        const storageRef = ref(storage, photoPath);
+        await uploadBytes(storageRef, file, {
+          contentType: file.type || "image/jpeg"
+        });
+        const photoURL = await getDownloadURL(storageRef);
+
+        await persistSignedDocument({
+          method: "physical",
+          answers: [],
+          signatureDataUrl: "",
+          photoPath,
+          photoURL
+        });
+
+        hideLoading();
+        renderDocumentConfirmation({
+          method: "physical",
+          answers: [],
+          photoPath,
+          photoURL
+        });
+      } catch (error) {
+        console.error("Error uploading physical document:", error);
+        hideLoading();
+        alert("Photo could not be uploaded. Check Storage rules.");
+      } finally {
+        photoInput.value = "";
+      }
+    });
+
+    async function persistSignedDocument(data) {
+      const packetRef = doc(db, "documentPackets", activePacket.flightId);
+      const currentDocuments = {
+        ...(activePacket.documents || {})
+      };
+
+      currentDocuments[activeDocKey] = {
+        ...getDocumentState(activePacket, activeDocKey),
+        ...data,
+        signed: true,
+        signedAt: new Date().toISOString()
+      };
+
+      const updatedPacket = {
+        ...activePacket,
+        documents: currentDocuments
+      };
+
+      const documentsComplete = areDocumentsComplete(updatedPacket);
+
+      await setDoc(
+        packetRef,
+        {
+          documents: currentDocuments,
+          documentsComplete,
+          status: activePacket.status || "active",
+          updatedAt: serverTimestamp()
+        },
+        { merge: true }
+      );
+
+      await updateDoc(doc(db, "flights", activePacket.flightId), {
+        documentsComplete,
+        documentsStatus: documentsComplete ? "complete" : "active"
+      }).catch(() => {});
+
+      activePacket = {
+        ...updatedPacket,
+        documentsComplete
+      };
+
+      packets.set(activePacket.flightId, activePacket);
+    }
+
+    function renderDocumentConfirmation(data) {
+      const config = DOC_CONFIG[activeDocKey];
+
+      renderDocShell(`
+        <div class="success-title">Documents successfully signed</div>
+        ${renderSignedSummary(config, {
+          ...getDocumentState(activePacket, activeDocKey),
+          ...data,
+          signed: true
+        })}
+        <button class="green-button" id="confirmationContinueButton" type="button">Continue</button>
+      `, false);
+
+      document.getElementById("confirmationContinueButton").addEventListener("click", () => {
+        openPacket(activePacket.flightId);
+      });
+    }
+
+    function renderSignedSummary(config, state) {
+      if (state.method === "physical") {
+        return `
+          <section class="summary-box">
+            <div class="summary-row">
+              <div class="summary-question">Filing method</div>
+              <div class="summary-answer">Physical</div>
+            </div>
+            ${state.photoURL ? `<img class="photo-preview" src="${escapeHTML(state.photoURL)}" alt="Physical CBP Form 7507 photo" />` : `<div class="summary-answer">Physical photo unavailable</div>`}
+          </section>
+        `;
+      }
+
+      const answers = Array.isArray(state.answers) ? state.answers : [];
+
+      return `
+        <section class="summary-box">
+          ${answers.map((item) => `
+            <div class="summary-row">
+              <div class="summary-question">${escapeHTML(item.question)}</div>
+              <div class="summary-answer">${escapeHTML(item.answer || "--")}</div>
+            </div>
+          `).join("")}
+          <div class="summary-row">
+            <div class="summary-question">Signature</div>
+            ${state.signatureDataUrl ? `<img class="signature-image" src="${escapeHTML(state.signatureDataUrl)}" alt="Digital signature" />` : `<div class="summary-answer">Signed</div>`}
+          </div>
+        </section>
+      `;
+    }
+
+    archiveButton.addEventListener("click", renderArchive);
+
+    function renderArchive() {
+      const archivedPackets = [...packets.values()]
+        .filter((packet) => packet.status === "archived" || packet.documentsComplete === true)
+        .sort((a, b) => String(getFlightData(b).flightDateRaw || "").localeCompare(String(getFlightData(a).flightDateRaw || "")));
+
+      archiveScreen.innerHTML = `
+        <div class="topbar">
+          <h1 class="page-title">Archive</h1>
+          <button class="icon-button" id="archiveBackButton" type="button" aria-label="Back">
+            <svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"></path></svg>
+          </button>
+        </div>
+        <div class="title-line"></div>
+        <div class="list" id="archiveList">
+          ${archivedPackets.length ? archivedPackets.map((packet) => renderFlightListCard(packet, "archive")).join("") : `<section class="empty-card">No signed documents archived yet.</section>`}
+        </div>
+      `;
+
+      document.getElementById("archiveBackButton").addEventListener("click", () => transitionTo(homeScreen));
+
+      archiveScreen.querySelectorAll("[data-flight-id]").forEach((button) => {
+        button.addEventListener("click", () => openArchivePacket(button.dataset.flightId));
+      });
+
+      transitionTo(archiveScreen);
+    }
+
+    function openArchivePacket(flightId) {
+      const packet = packets.get(flightId);
+      if (!packet) return;
+
+      activePacket = packet;
+      activeFlight = getFlightData(packet);
+
+      archivePacketScreen.innerHTML = `
+        ${renderDetailHeader(packet)}
+        <section class="status-card">Signed documents</section>
+        <section class="document-actions">${renderPacketButtons(packet, true)}</section>
+      `;
+
+      document.getElementById("detailCloseButton").addEventListener("click", renderArchive);
+
+      archivePacketScreen.querySelectorAll("[data-doc-key]").forEach((button) => {
+        button.addEventListener("click", () => openArchivedDocument(button.dataset.docKey));
+      });
+
+      transitionTo(archivePacketScreen);
+    }
+
+    function openArchivedDocument(key) {
+      const config = DOC_CONFIG[key];
+      const state = getDocumentState(activePacket, key);
+
+      archiveDocumentScreen.innerHTML = `
+        <section style="min-height:calc(100svh - 90px);display:grid;align-content:center;gap:18px;">
+          ${renderSignedSummary(config, state)}
+          <button class="gray-button" id="archiveDocumentBackButton" type="button">Back</button>
+        </section>
+      `;
+
+      document.getElementById("archiveDocumentBackButton").addEventListener("click", () => openArchivePacket(activePacket.flightId));
+      transitionTo(archiveDocumentScreen);
+    }
+
+    async function ensurePacketExists(flightId, flight) {
+      if (packets.has(flightId)) return packets.get(flightId);
+
+      const requiredDocuments = getRequiredDocumentKeys({}, flight);
+      const documents = {};
+
+      requiredDocuments.forEach((key) => {
+        documents[key] = {
+          key,
+          title: DOC_CONFIG[key].title,
+          required: true,
+          signed: false,
+          method: "",
+          answers: [],
+          signatureDataUrl: "",
+          photoPath: "",
+          photoURL: "",
+          signedAt: null
+        };
+      });
+
+      const packet = {
+        flightId,
+        status: "active",
+        documentsComplete: false,
+        requiredDocuments,
+        documents,
+        internationalUSArrival: flight.internationalUSArrival === true,
+        internationalUSDeparture: flight.internationalUSDeparture === true,
+        flightSnapshot: {
+          airline: flight.airline || "",
+          flightNumber: flight.flightNumber || "",
+          flightDate: flight.flightDate || "",
+          flightDateRaw: flight.flightDateRaw || "",
+          departureAirport: flight.departureAirport || "",
+          arrivalAirport: flight.arrivalAirport || "",
+          departureAirportName: flight.departureAirportName || "",
+          arrivalAirportName: flight.arrivalAirportName || "",
+          cityDeparture: flight.cityDeparture || "",
+          cityArrival: flight.cityArrival || "",
+          scheduledDeparture: flight.scheduledDeparture || "",
+          scheduledArrival: flight.scheduledArrival || "",
+          assignedSeat: flight.assignedSeat || "",
+          seatCabin: flight.seatCabin || ""
+        },
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      };
+
+      await setDoc(doc(db, "documentPackets", flightId), packet, { merge: true });
+      return packet;
+    }
+
+    function startDocumentSite() {
+      onSnapshot(collection(db, "flights"), (snapshot) => {
+        flights.clear();
+
+        snapshot.forEach((item) => {
+          flights.set(item.id, {
+            id: item.id,
+            ...item.data()
+          });
+        });
+
+        renderHome();
+      }, (error) => {
+        console.error("Error loading flights:", error);
+      });
+
+      onSnapshot(collection(db, "documentPackets"), async (snapshot) => {
+        packets.clear();
+
+        snapshot.forEach((item) => {
+          packets.set(item.id, {
+            id: item.id,
+            ...item.data()
+          });
+        });
+
+        if (launchFlightId && !packets.has(launchFlightId) && flights.has(launchFlightId)) {
+          try {
+            const packet = await ensurePacketExists(launchFlightId, flights.get(launchFlightId));
+            packets.set(launchFlightId, packet);
+          } catch (error) {
+            console.error("Error creating missing packet:", error);
+          }
+        }
+
+        if (launchFlightId && packets.has(launchFlightId) && !activePacket) {
+          openPacket(launchFlightId);
+          return;
+        }
+
+        if (activePacket && packets.has(activePacket.flightId)) {
+          activePacket = packets.get(activePacket.flightId);
+        }
+
+        renderHome();
+      }, (error) => {
+        console.error("Error loading document packets:", error);
+        homeList.innerHTML = `<section class="empty-card">Documents could not be loaded. Check Firestore rules.</section>`;
+      });
+    }
+
+    requireOwnerAuth(startDocumentSite);
+  </script>
+</body>
+</html>
