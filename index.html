@@ -1225,12 +1225,23 @@
   return getFlightData(packet).phase || packet.flightSnapshot?.phase || "scheduled";
 }
 
+    function isUSPreclearancePacket(packet) {
+  const flight = getFlightData(packet);
+
+  return (
+    flight.usPreclearance === true ||
+    packet.usPreclearance === true ||
+    packet.flightSnapshot?.usPreclearance === true
+  );
+}
+
 function isPostArrivalDocument(packet, key) {
   const flight = getFlightData(packet);
 
   return (
     key === "cbp7507" &&
-    (flight.internationalUSArrival === true || packet.internationalUSArrival === true)
+    (flight.internationalUSArrival === true || packet.internationalUSArrival === true) &&
+    !isUSPreclearancePacket(packet)
   );
 }
 
@@ -1982,8 +1993,9 @@ const documentsComplete = areDocumentsComplete(updatedPacket);
         requiredDocuments,
         documents,
         internationalUSArrival: flight.internationalUSArrival === true,
-        internationalUSDeparture: flight.internationalUSDeparture === true,
-        flightSnapshot: {
+internationalUSDeparture: flight.internationalUSDeparture === true,
+usPreclearance: flight.usPreclearance === true,
+flightSnapshot: {
           airline: flight.airline || "",
           flightNumber: flight.flightNumber || "",
           flightDate: flight.flightDate || "",
@@ -1997,7 +2009,8 @@ const documentsComplete = areDocumentsComplete(updatedPacket);
           scheduledDeparture: flight.scheduledDeparture || "",
           scheduledArrival: flight.scheduledArrival || "",
           assignedSeat: flight.assignedSeat || "",
-          seatCabin: flight.seatCabin || ""
+          seatCabin: flight.seatCabin || "",
+usPreclearance: flight.usPreclearance === true
         },
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
