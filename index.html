@@ -350,6 +350,17 @@
       filter: grayscale(0.35);
     }
 
+    .document-button.locked {
+  border-color: rgba(255, 255, 255, 0.14);
+  opacity: 0.42;
+  cursor: not-allowed;
+  filter: grayscale(0.65);
+}
+
+.document-button.locked .document-state {
+  color: rgba(255, 255, 255, 0.46);
+}
+
     .signed-check {
       position: absolute;
       top: -12px;
@@ -1141,14 +1152,48 @@
       };
     }
 
-    function getRemainingDocuments(packet) {
-      const flight = getFlightData(packet);
-      return getRequiredDocumentKeys(packet, flight).filter((key) => getDocumentState(packet, key).signed !== true);
-    }
+    function getFlightPhaseForPacket(packet) {
+  return getFlightData(packet).phase || packet.flightSnapshot?.phase || "scheduled";
+}
 
-    function areDocumentsComplete(packet) {
-      return getRemainingDocuments(packet).length === 0;
-    }
+function isPostArrivalDocument(packet, key) {
+  const flight = getFlightData(packet);
+
+  return (
+    key === "cbp7507" &&
+    (flight.internationalUSArrival === true || packet.internationalUSArrival === true)
+  );
+}
+
+function isPostArrivalDocumentLocked(packet, key) {
+  if (!isPostArrivalDocument(packet, key)) return false;
+  if (getDocumentState(packet, key).signed === true) return false;
+
+  return getFlightPhaseForPacket(packet) !== "gateArrival";
+}
+
+function getPreDepartureDocumentKeys(packet) {
+  const flight = getFlightData(packet);
+
+  return getRequiredDocumentKeys(packet, flight).filter((key) => !isPostArrivalDocument(packet, key));
+}
+
+function getRemainingPreDepartureDocuments(packet) {
+  return getPreDepartureDocumentKeys(packet).filter((key) => getDocumentState(packet, key).signed !== true);
+}
+
+function getRemainingDocuments(packet) {
+  const flight = getFlightData(packet);
+  return getRequiredDocumentKeys(packet, flight).filter((key) => getDocumentState(packet, key).signed !== true);
+}
+
+function arePreDepartureDocumentsComplete(packet) {
+  return getRemainingPreDepartureDocuments(packet).length === 0;
+}
+
+function areDocumentsComplete(packet) {
+  return getRemainingDocuments(packet).length === 0;
+}
 
     function getPrefillAnswer(question, flight) {
       const label = question.toLowerCase();
@@ -1230,13 +1275,28 @@
     }
 
     function getPacketStatusText(packet) {
-      const remaining = getRemainingDocuments(packet).length;
-      const total = getRequiredDocumentKeys(packet, getFlightData(packet)).length;
+  const remaining = getRemainingDocuments(packet).length;
+  const preDepartureRemaining = getRemainingPreDepartureDocuments(packet).length;
+  const preDepartureTotal = getPreDepartureDocumentKeys(packet).length;
+  const hasLockedArrivalDoc = getRequiredDocumentKeys(packet, getFlightData(packet))
+    .some((key) => isPostArrivalDocumentLocked(packet, key));
 
-      if (remaining === 0) return "Documents complete";
-      if (remaining === total) return `${total} document${total === 1 ? "" : "s"} required`;
-      return `${remaining} document${remaining === 1 ? "" : "s"} remaining`;
-    }
+  if (remaining === 0) return "Documents complete";
+
+  if (hasLockedArrivalDoc && preDepartureRemaining === 0) {
+    return "Arrival document pending";
+  }
+
+  if (hasLockedArrivalDoc) {
+    return `${preDepartureRemaining} document${preDepartureRemaining === 1 ? "" : "s"} required`;
+  }
+
+  if (remaining === preDepartureTotal) {
+    return `${remaining} document${remaining === 1 ? "" : "s"} required`;
+  }
+
+  return `${remaining} document${remaining === 1 ? "" : "s"} remaining`;
+}
 
     function renderPacketButtons(packet, archiveMode = false) {
       const flight = getFlightData(packet);
@@ -1245,18 +1305,21 @@
         const config = DOC_CONFIG[key];
         const state = getDocumentState(packet, key);
         const signed = state.signed === true;
-        const subtitle = signed
-          ? state.method === "physical"
-            ? "Physical filing complete"
-            : "Signed and filed"
-          : "Ready to sign";
+const locked = !archiveMode && isPostArrivalDocumentLocked(packet, key);
+const subtitle = signed
+  ? state.method === "physical"
+    ? "Physical filing complete"
+    : "Signed and filed"
+  : locked
+    ? "Available after gate arrival"
+    : "Ready to sign";
 
         return `
           <button
-            class="document-button ${signed ? "signed" : ""}"
+            class="document-button ${signed ? "signed" : ""} ${locked ? "locked" : ""}"
             type="button"
             data-doc-key="${escapeHTML(key)}"
-            ${signed && !archiveMode ? "disabled" : ""}
+            ${(signed && !archiveMode) || locked ? "disabled" : ""}
           >
             <div class="signed-check">✓</div>
             <div class="document-name">${escapeHTML(config.shortTitle)}</div>
@@ -1285,7 +1348,9 @@
         button.addEventListener("click", () => {
           const key = button.dataset.docKey;
           if (getDocumentState(activePacket, key).signed === true) return;
-          openDocumentIntro(key);
+if (isPostArrivalDocumentLocked(activePacket, key)) return;
+
+openDocumentIntro(key);
         });
       });
 
@@ -1333,7 +1398,7 @@
       activeDocKey = key;
       currentDocMode = "intro";
       currentQuestionIndex = 0;
-      currentAnswers = DOC_CONFIG[key].questions.map((question) => getPrefillAnswer(question, activeFlight));
+      currentAnswers = DOC_CONFIG[key].questions.map(() => "");
       currentMethod = "";
 
       if (key === "cbp7507") {
@@ -1425,8 +1490,6 @@
       const answerInput = document.getElementById("answerInput");
       const continueButton = document.getElementById("continueQuestionButton");
       const backButton = document.getElementById("backQuestionButton");
-
-      answerInput.focus({ preventScroll: true });
 
       continueButton.addEventListener("click", () => {
         currentAnswers[index] = answerInput.value.trim();
@@ -1669,28 +1732,32 @@
         documents: currentDocuments
       };
 
-      const documentsComplete = areDocumentsComplete(updatedPacket);
+      const preDepartureDocumentsComplete = arePreDepartureDocumentsComplete(updatedPacket);
+const documentsComplete = areDocumentsComplete(updatedPacket);
 
       await setDoc(
-        packetRef,
-        {
-          documents: currentDocuments,
-          documentsComplete,
-          status: activePacket.status || "active",
-          updatedAt: serverTimestamp()
-        },
-        { merge: true }
-      );
+  packetRef,
+  {
+    documents: currentDocuments,
+    preDepartureDocumentsComplete,
+    documentsComplete,
+    status: activePacket.status || "active",
+    updatedAt: serverTimestamp()
+  },
+  { merge: true }
+);
 
       await updateDoc(doc(db, "flights", activePacket.flightId), {
-        documentsComplete,
-        documentsStatus: documentsComplete ? "complete" : "active"
-      }).catch(() => {});
+  preDepartureDocumentsComplete,
+  documentsComplete,
+  documentsStatus: documentsComplete ? "complete" : "active"
+}).catch(() => {});
 
       activePacket = {
-        ...updatedPacket,
-        documentsComplete
-      };
+  ...updatedPacket,
+  preDepartureDocumentsComplete,
+  documentsComplete
+};
 
       packets.set(activePacket.flightId, activePacket);
     }
@@ -1748,8 +1815,8 @@
 
     function renderArchive() {
       const archivedPackets = [...packets.values()]
-        .filter((packet) => packet.status === "archived" || packet.documentsComplete === true)
-        .sort((a, b) => String(getFlightData(b).flightDateRaw || "").localeCompare(String(getFlightData(a).flightDateRaw || "")));
+  .filter((packet) => packet.status === "archived")
+  .sort((a, b) => String(getFlightData(b).flightDateRaw || "").localeCompare(String(getFlightData(a).flightDateRaw || "")));
 
       archiveScreen.innerHTML = `
         <div class="topbar">
