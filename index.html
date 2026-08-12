@@ -2020,8 +2020,28 @@ usPreclearance: flight.usPreclearance === true
       return packet;
     }
 
+    async function ensureActivePacketsExist() {
+      const missingFlights = [...flights.values()].filter((flight) => {
+        if (!flight?.id) return false;
+        if (packets.has(flight.id)) return false;
+        if (flight.documentsStatus === "archived" || flight.documentsStatus === "deleted") return false;
+        return true;
+      });
+
+      if (!missingFlights.length) return;
+
+      for (const flight of missingFlights) {
+        try {
+          const packet = await ensurePacketExists(flight.id, flight);
+          packets.set(flight.id, packet);
+        } catch (error) {
+          console.error("Error rebuilding missing document packet:", flight.id, error);
+        }
+      }
+    }
+
     function startDocumentSite() {
-      onSnapshot(collection(db, "flights"), (snapshot) => {
+      onSnapshot(collection(db, "flights"), async (snapshot) => {
         flights.clear();
 
         snapshot.forEach((item) => {
@@ -2031,6 +2051,7 @@ usPreclearance: flight.usPreclearance === true
           });
         });
 
+        await ensureActivePacketsExist();
         renderHome();
       }, (error) => {
         console.error("Error loading flights:", error);
@@ -2045,6 +2066,8 @@ usPreclearance: flight.usPreclearance === true
             ...item.data()
           });
         });
+
+        await ensureActivePacketsExist();
 
         if (launchFlightId && !packets.has(launchFlightId) && flights.has(launchFlightId)) {
           try {
